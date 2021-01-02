@@ -381,6 +381,44 @@ void main() {
               (f.contentType.mimeType == "image/jpeg");
         }), reason: "Failed comparing files");
       });
+
+      group("response", () {
+        test("returns correct apiresponse", () async {
+          var endpoint =
+              EndpointMultipart(path: "hibye", httpMethod: HttpMethod.get);
+          http.StreamedResponse httpResponse;
+          var expectedBody = "helloWorld";
+          var expectedStatusCode = 300;
+          var expectedHeaders = {"Foo": "Bar"};
+          var r = makeSUT(streamingFn: (re, bs) {
+            httpResponse = _buildhttpStreamedResponse(
+                request: re,
+                statusCode: expectedStatusCode,
+                body: expectedBody,
+                headers: expectedHeaders);
+            return Future.value(httpResponse);
+          });
+          var response = await r.sut.requestMultipart(endpoint);
+          expect(response.statusCode, expectedStatusCode,
+              reason: "Failed handling response statusCode");
+          expect(response.data, expectedBody,
+              reason: "Failed handling response data");
+          expect(response.headers, expectedHeaders,
+              reason: "Failed handling response headers");
+        });
+
+        test("throws an exception if the client throws one", () async {
+          for (var m in HttpMethod.values) {
+            var endpoint = EndpointMultipart(path: "hibye", httpMethod: m);
+
+            var r = makeSUT(streamingFn: (re, bs) {
+              return Future.error(SocketException("Error"));
+            });
+            expect(() async => await r.sut.requestMultipart(endpoint),
+                throwsException);
+          }
+        });
+      });
     });
   });
 }

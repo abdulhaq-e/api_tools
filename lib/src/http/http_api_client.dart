@@ -69,7 +69,6 @@ class HttpAPIClient implements APIClient {
         resolveAgainstBaseURL: endpoint.resolveAgainstBaseURL);
 
     Uri uri = Uri.parse(url);
-    Response response;
     String method = _HTTP_METHODS_STRINGS_MAP[endpoint.httpMethod];
     var request = MultipartRequest(method, uri);
     request.headers.addAll(endpoint.headers);
@@ -79,12 +78,13 @@ class HttpAPIClient implements APIClient {
             filename: x.fileName,
             contentType: MediaType(x.mediaType.type, x.mediaType.subtype)))
         .toList());
-    await client.send(request);
+    var streamedResponse = await client.send(request);
+    var response = await streamedResponse.stream.bytesToString();
     if (response != null) {
       return APIResponse(
-          data: response.body,
-          statusCode: response.statusCode,
-          headers: response.headers);
+          data: response,
+          statusCode: streamedResponse.statusCode,
+          headers: streamedResponse.headers);
     }
   }
 
