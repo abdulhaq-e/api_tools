@@ -4,6 +4,7 @@ import 'package:api_tools/api_tools.dart';
 import 'package:http/http.dart';
 import 'package:http/src/utils.dart';
 import 'package:path/path.dart' as path;
+import 'package:http_parser/http_parser.dart';
 
 class HttpAPIClient implements APIClient {
   String baseURL;
@@ -74,8 +75,9 @@ class HttpAPIClient implements APIClient {
     request.headers.addAll(endpoint.headers);
     request.fields.addAll(endpoint.fields);
     request.files.addAll(endpoint.files
-        .map((x) =>
-            MultipartFile.fromBytes(x.fieldName, x.bytes, filename: x.fileName))
+        .map((x) => MultipartFile.fromBytes(x.fieldName, x.bytes,
+            filename: x.fileName,
+            contentType: MediaType(x.mediaType.type, x.mediaType.subtype)))
         .toList());
     await client.send(request);
     if (response != null) {

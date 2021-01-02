@@ -2,15 +2,24 @@ import 'package:meta/meta.dart';
 import 'package:equatable/equatable.dart';
 import 'package:api_tools/api_tools.dart';
 
+class EndpointMultipartFileMediaType {
+  final String type;
+  final String subtype;
+
+  EndpointMultipartFileMediaType({this.type, this.subtype});
+}
+
 class EndpointMultipartFile extends Equatable {
   final String fieldName;
   final String fileName;
+  final EndpointMultipartFileMediaType mediaType;
   final List<int> bytes;
 
-  EndpointMultipartFile({this.fieldName, this.fileName, this.bytes});
+  EndpointMultipartFile(
+      {this.fieldName, this.fileName, this.bytes, this.mediaType});
 
   @override
-  List<Object> get props => [fieldName, fileName, bytes];
+  List<Object> get props => [fieldName, fileName, bytes, mediaType];
 }
 
 class EndpointMultipart extends Equatable {

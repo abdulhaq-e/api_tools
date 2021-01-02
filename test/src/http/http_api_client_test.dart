@@ -6,6 +6,7 @@ import 'package:api_tools/api_tools.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/src/utils.dart';
 import 'package:http/testing.dart';
+import 'package:http_parser/http_parser.dart';
 
 class SUTWrapper {
   HttpAPIClient sut;
@@ -359,7 +360,9 @@ void main() {
           EndpointMultipartFile(
               fieldName: "testFieldName",
               fileName: "testFileName",
-              bytes: utf8.encode("testBytes"))
+              bytes: utf8.encode("testBytes"),
+              mediaType: EndpointMultipartFileMediaType(
+                  type: "image", subtype: "jpeg")),
         ];
         var endpoint = EndpointMultipart(
             path: "hibye", httpMethod: HttpMethod.get, files: expectedFiles);
@@ -371,9 +374,11 @@ void main() {
         await r.sut.requestMultipart(endpoint);
         expect((httpResponse.request as http.MultipartRequest).files,
             predicate((List<http.MultipartFile> r) {
-          return (r.first.field == expectedFiles.first.fieldName) &&
-              (r.first.filename == expectedFiles.first.fileName) &&
-              (r.first.length == expectedFiles.first.bytes.length);
+          var f = r.first;
+          return (f.field == expectedFiles.first.fieldName) &&
+              (f.filename == expectedFiles.first.fileName) &&
+              (f.length == expectedFiles.first.bytes.length) &&
+              (f.contentType.mimeType == "image/jpeg");
         }), reason: "Failed comparing files");
       });
     });
