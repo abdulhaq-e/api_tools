@@ -1,4 +1,4 @@
-import 'package:api_tools/src/endpoint.dart';
+import 'package:api_tools/api_tools.dart';
 
 class APIResponse {
   dynamic data;
@@ -19,4 +19,5 @@ enum APIErrorType { timeout, response, cancel, general }
 
 abstract class APIClient {
   Future<APIResponse> request(Endpoint endpoint);
+  Future<APIResponse> requestMultipart(EndpointMultipart endpoint);
 }

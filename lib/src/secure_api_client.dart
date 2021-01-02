@@ -19,4 +19,13 @@ class SecureAPIClient extends APIClient {
     };
     return client.request(endpoint.copyWith(headers: headers));
   }
+
+  @override
+  Future<APIResponse> requestMultipart(EndpointMultipart endpoint) async {
+    Map<String, String> headers = {
+      ...endpoint.headers,
+      this.authHeaderKey: '$authTokenPrefix $token'
+    };
+    return client.requestMultipart(endpoint.copyWith(headers: headers));
+  }
 }

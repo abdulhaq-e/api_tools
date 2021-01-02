@@ -18,9 +18,16 @@ void main() {
   group("HttpAPIClient", () {
     SUTWrapper makeSUT(
         {String baseURL = _BASE_URL,
-        Future<http.Response> Function(http.Request) fn}) {
-      var client = MockClient(fn);
-
+        Future<http.Response> Function(http.Request) fn,
+        Future<http.StreamedResponse> Function(
+                http.BaseRequest, http.ByteStream)
+            streamingFn}) {
+      http.BaseClient client;
+      if (fn != null) {
+        client = MockClient(fn);
+      } else if (streamingFn != null) {
+        client = MockClient.streaming(streamingFn);
+      }
       var sut = HttpAPIClient(baseURL: baseURL, client: client);
       return SUTWrapper(sut: sut);
     }
@@ -34,228 +41,340 @@ void main() {
           headers: headers, request: request);
     }
 
-    group("url parsing", () {
-      test("add Enpoint path to baseURL", () async {
-        for (var m in HttpMethod.values) {
-          var endpoint = Endpoint(
-              path: "hibye", resolveAgainstBaseURL: true, httpMethod: m);
-          http.Response httpResponse;
-          var r = makeSUT(fn: (re) {
-            httpResponse = _buildhttpResponse(request: re);
-            return Future.value(httpResponse);
-          });
-          await r.sut.request(endpoint);
-          expect(httpResponse.request.url, Uri.parse(_BASE_URL + "/hibye"),
-              reason: "Failed uri parsing for $m request");
-        }
-      });
+    http.StreamedResponse _buildhttpStreamedResponse(
+        {String body = "spam",
+        int statusCode = 200,
+        Map<String, String> headers = const {},
+        http.BaseRequest request}) {
+      return http.StreamedResponse(Stream.value(utf8.encode(body)), statusCode,
+          headers: headers, request: request);
+    }
 
-      test("add Enpoint path to baseURL, path starting with forwardslash",
-          () async {
-        for (var m in HttpMethod.values) {
-          var endpoint = Endpoint(
-              path: "/hibye", resolveAgainstBaseURL: true, httpMethod: m);
-          http.Response httpResponse;
-          var r = makeSUT(fn: (re) {
-            httpResponse = _buildhttpResponse(request: re);
-            return Future.value(httpResponse);
-          });
-          await r.sut.request(endpoint);
-          expect(httpResponse.request.url, Uri.parse(_BASE_URL + "/hibye"),
-              reason: "Failed uri parsing for $m request");
-        }
-      });
-
-      test("add Enpoint queryParams to uri", () async {
-        for (var m in HttpMethod.values) {
-          var queryParams = {"a": "1", "b": "2", "c": "3"};
-          var endpoint = Endpoint(
-              path: "hibye", queryParameters: queryParams, httpMethod: m);
-          http.Response httpResponse;
-          var r = makeSUT(fn: (re) {
-            httpResponse = _buildhttpResponse(request: re);
-            return Future.value(httpResponse);
-          });
-          await r.sut.request(endpoint);
-          expect(
-              httpResponse.request.url,
-              Uri.parse(_BASE_URL +
-                  "/hibye?" +
-                  mapToQuery(queryParams, encoding: utf8)),
-              reason: "Failed uri parsing for $m request");
-        }
-      });
-      test("use Enpoint path as uri", () async {
-        for (var m in HttpMethod.values) {
-          var endpoint = Endpoint(
-              path: "hibye", resolveAgainstBaseURL: false, httpMethod: m);
-          http.Response httpResponse;
-          var r = makeSUT(fn: (re) {
-            httpResponse = _buildhttpResponse(request: re);
-            return Future.value(httpResponse);
-          });
-          await r.sut.request(endpoint);
-          expect(httpResponse.request.url, Uri.parse("hibye"),
-              reason: "Failed uri parsing for $m request");
-        }
-      });
-    });
-
-    group("setting correct headers", () {
-      test("add Enpoint headers including contentType and acceptType",
-          () async {
-        for (var m in HttpMethod.values) {
-          for (var mime in MIMEType.values) {
-            var headers = {"Auth": "Token"};
-
-            var endpoint =
-                Endpoint(path: "blabla", httpMethod: m, headers: headers);
-            var expectedHeaders = {
-              "Auth": "Token",
-              "Content-Type": mimeTypeValue(endpoint.contentType),
-              "Accept": mimeTypeValue(endpoint.acceptType)
-            };
+    group("request", () {
+      group("url parsing", () {
+        test("add Enpoint path to baseURL", () async {
+          for (var m in HttpMethod.values) {
+            var endpoint = Endpoint(
+                path: "hibye", resolveAgainstBaseURL: true, httpMethod: m);
             http.Response httpResponse;
             var r = makeSUT(fn: (re) {
               httpResponse = _buildhttpResponse(request: re);
               return Future.value(httpResponse);
             });
             await r.sut.request(endpoint);
-            expect(httpResponse.request.headers, expectedHeaders,
-                reason:
-                    "Failed httper heasder for $m request using mime $mime");
+            expect(httpResponse.request.url, Uri.parse(_BASE_URL + "/hibye"),
+                reason: "Failed uri parsing for $m request");
           }
-        }
-      });
-    });
-
-    group("post", () {
-      test("set correct body, json", () async {
-        var data = jsonEncode({"a1": "1", "b2": "2"});
-        var endpoint =
-            Endpoint(path: "hibye", data: data, httpMethod: HttpMethod.post);
-        http.Response httpResponse;
-        var r = makeSUT(fn: (re) {
-          httpResponse = _buildhttpResponse(request: re);
-          return Future.value(httpResponse);
         });
-        await r.sut.request(endpoint);
-        expect((httpResponse.request as http.Request).body, data);
-      });
 
-      test("set correct body, form-endocded", () async {
-        var data = {"a1": "1", "b2": "2"};
-        var endpoint = Endpoint(
-            path: "hibye",
-            data: data,
-            contentType: MIMEType.application_x_www_form_urlencoded,
-            httpMethod: HttpMethod.post);
-        http.Response httpResponse;
-        var r = makeSUT(fn: (re) {
-          httpResponse = _buildhttpResponse(request: re);
-          return Future.value(httpResponse);
+        test("add Enpoint path to baseURL, path starting with forwardslash",
+            () async {
+          for (var m in HttpMethod.values) {
+            var endpoint = Endpoint(
+                path: "/hibye", resolveAgainstBaseURL: true, httpMethod: m);
+            http.Response httpResponse;
+            var r = makeSUT(fn: (re) {
+              httpResponse = _buildhttpResponse(request: re);
+              return Future.value(httpResponse);
+            });
+            await r.sut.request(endpoint);
+            expect(httpResponse.request.url, Uri.parse(_BASE_URL + "/hibye"),
+                reason: "Failed uri parsing for $m request");
+          }
         });
-        await r.sut.request(endpoint);
-        expect((httpResponse.request as http.Request).bodyFields, data);
-      });
-    });
 
-    group("put", () {
-      test("set correct body, json", () async {
-        var data = jsonEncode({"a1": "1", "b2": "2"});
-        var endpoint =
-            Endpoint(path: "hibye", data: data, httpMethod: HttpMethod.put);
-        http.Response httpResponse;
-        var r = makeSUT(fn: (re) {
-          httpResponse = _buildhttpResponse(request: re);
-          return Future.value(httpResponse);
+        test("add Enpoint queryParams to uri", () async {
+          for (var m in HttpMethod.values) {
+            var queryParams = {"a": "1", "b": "2", "c": "3"};
+            var endpoint = Endpoint(
+                path: "hibye", queryParameters: queryParams, httpMethod: m);
+            http.Response httpResponse;
+            var r = makeSUT(fn: (re) {
+              httpResponse = _buildhttpResponse(request: re);
+              return Future.value(httpResponse);
+            });
+            await r.sut.request(endpoint);
+            expect(
+                httpResponse.request.url,
+                Uri.parse(_BASE_URL +
+                    "/hibye?" +
+                    mapToQuery(queryParams, encoding: utf8)),
+                reason: "Failed uri parsing for $m request");
+          }
         });
-        await r.sut.request(endpoint);
-        expect((httpResponse.request as http.Request).body, data);
-      });
-
-      test("set correct body, form-endocded", () async {
-        var data = {"a1": "1", "b2": "2"};
-        var endpoint = Endpoint(
-            path: "hibye",
-            data: data,
-            contentType: MIMEType.application_x_www_form_urlencoded,
-            httpMethod: HttpMethod.put);
-        http.Response httpResponse;
-        var r = makeSUT(fn: (re) {
-          httpResponse = _buildhttpResponse(request: re);
-          return Future.value(httpResponse);
+        test("use Enpoint path as uri", () async {
+          for (var m in HttpMethod.values) {
+            var endpoint = Endpoint(
+                path: "hibye", resolveAgainstBaseURL: false, httpMethod: m);
+            http.Response httpResponse;
+            var r = makeSUT(fn: (re) {
+              httpResponse = _buildhttpResponse(request: re);
+              return Future.value(httpResponse);
+            });
+            await r.sut.request(endpoint);
+            expect(httpResponse.request.url, Uri.parse("hibye"),
+                reason: "Failed uri parsing for $m request");
+          }
         });
-        await r.sut.request(endpoint);
-        expect((httpResponse.request as http.Request).bodyFields, data);
       });
-    });
 
-    group("patch", () {
-      test("set correct body, json", () async {
-        var data = jsonEncode({"a1": "1", "b2": "2"});
-        var endpoint =
-            Endpoint(path: "hibye", data: data, httpMethod: HttpMethod.patch);
-        http.Response httpResponse;
-        var r = makeSUT(fn: (re) {
-          httpResponse = _buildhttpResponse(request: re);
-          return Future.value(httpResponse);
+      group("setting correct headers", () {
+        test("add Enpoint headers including contentType and acceptType",
+            () async {
+          for (var m in HttpMethod.values) {
+            for (var mime in MIMEType.values) {
+              var headers = {"Auth": "Token"};
+
+              var endpoint =
+                  Endpoint(path: "blabla", httpMethod: m, headers: headers);
+              var expectedHeaders = {
+                "Auth": "Token",
+                "Content-Type": mimeTypeValue(endpoint.contentType),
+                "Accept": mimeTypeValue(endpoint.acceptType)
+              };
+              http.Response httpResponse;
+              var r = makeSUT(fn: (re) {
+                httpResponse = _buildhttpResponse(request: re);
+                return Future.value(httpResponse);
+              });
+              await r.sut.request(endpoint);
+              expect(httpResponse.request.headers, expectedHeaders,
+                  reason:
+                      "Failed httper heasder for $m request using mime $mime");
+            }
+          }
         });
-        await r.sut.request(endpoint);
-        expect((httpResponse.request as http.Request).body, data);
       });
 
-      test("set correct body, form-endocded", () async {
-        var data = {"a1": "1", "b2": "2"};
-        var endpoint = Endpoint(
-            path: "hibye",
-            data: data,
-            contentType: MIMEType.application_x_www_form_urlencoded,
-            httpMethod: HttpMethod.patch);
-        http.Response httpResponse;
-        var r = makeSUT(fn: (re) {
-          httpResponse = _buildhttpResponse(request: re);
-          return Future.value(httpResponse);
-        });
-        await r.sut.request(endpoint);
-        expect((httpResponse.request as http.Request).bodyFields, data);
-      });
-    });
-
-    group("response", () {
-      test("returns correct apiresponse", () async {
-        for (var m in HttpMethod.values) {
-          var endpoint = Endpoint(path: "hibye", httpMethod: m);
+      group("post", () {
+        test("set correct body, json", () async {
+          var data = jsonEncode({"a1": "1", "b2": "2"});
+          var endpoint =
+              Endpoint(path: "hibye", data: data, httpMethod: HttpMethod.post);
           http.Response httpResponse;
-          var expectedBody = "helloWorld";
-          var expectedStatusCode = 300;
-          var expectedHeaders = {"Foo": "Bar"};
           var r = makeSUT(fn: (re) {
-            httpResponse = _buildhttpResponse(
-                request: re,
-                statusCode: expectedStatusCode,
-                body: expectedBody,
-                headers: expectedHeaders);
+            httpResponse = _buildhttpResponse(request: re);
             return Future.value(httpResponse);
           });
-          var response = await r.sut.request(endpoint);
-          expect(response.statusCode, expectedStatusCode,
-              reason: "Failed handling response statusCode for $m request");
-          expect(response.data, expectedBody,
-              reason: "Failed handling response data for $m request");
-          expect(response.headers, expectedHeaders,
-              reason: "Failed handling response headers for $m request");
+          await r.sut.request(endpoint);
+          expect((httpResponse.request as http.Request).body, data);
+        });
+
+        test("set correct body, form-endocded", () async {
+          var data = {"a1": "1", "b2": "2"};
+          var endpoint = Endpoint(
+              path: "hibye",
+              data: data,
+              contentType: MIMEType.application_x_www_form_urlencoded,
+              httpMethod: HttpMethod.post);
+          http.Response httpResponse;
+          var r = makeSUT(fn: (re) {
+            httpResponse = _buildhttpResponse(request: re);
+            return Future.value(httpResponse);
+          });
+          await r.sut.request(endpoint);
+          expect((httpResponse.request as http.Request).bodyFields, data);
+        });
+      });
+
+      group("put", () {
+        test("set correct body, json", () async {
+          var data = jsonEncode({"a1": "1", "b2": "2"});
+          var endpoint =
+              Endpoint(path: "hibye", data: data, httpMethod: HttpMethod.put);
+          http.Response httpResponse;
+          var r = makeSUT(fn: (re) {
+            httpResponse = _buildhttpResponse(request: re);
+            return Future.value(httpResponse);
+          });
+          await r.sut.request(endpoint);
+          expect((httpResponse.request as http.Request).body, data);
+        });
+
+        test("set correct body, form-endocded", () async {
+          var data = {"a1": "1", "b2": "2"};
+          var endpoint = Endpoint(
+              path: "hibye",
+              data: data,
+              contentType: MIMEType.application_x_www_form_urlencoded,
+              httpMethod: HttpMethod.put);
+          http.Response httpResponse;
+          var r = makeSUT(fn: (re) {
+            httpResponse = _buildhttpResponse(request: re);
+            return Future.value(httpResponse);
+          });
+          await r.sut.request(endpoint);
+          expect((httpResponse.request as http.Request).bodyFields, data);
+        });
+      });
+
+      group("patch", () {
+        test("set correct body, json", () async {
+          var data = jsonEncode({"a1": "1", "b2": "2"});
+          var endpoint =
+              Endpoint(path: "hibye", data: data, httpMethod: HttpMethod.patch);
+          http.Response httpResponse;
+          var r = makeSUT(fn: (re) {
+            httpResponse = _buildhttpResponse(request: re);
+            return Future.value(httpResponse);
+          });
+          await r.sut.request(endpoint);
+          expect((httpResponse.request as http.Request).body, data);
+        });
+
+        test("set correct body, form-endocded", () async {
+          var data = {"a1": "1", "b2": "2"};
+          var endpoint = Endpoint(
+              path: "hibye",
+              data: data,
+              contentType: MIMEType.application_x_www_form_urlencoded,
+              httpMethod: HttpMethod.patch);
+          http.Response httpResponse;
+          var r = makeSUT(fn: (re) {
+            httpResponse = _buildhttpResponse(request: re);
+            return Future.value(httpResponse);
+          });
+          await r.sut.request(endpoint);
+          expect((httpResponse.request as http.Request).bodyFields, data);
+        });
+      });
+
+      group("response", () {
+        test("returns correct apiresponse", () async {
+          for (var m in HttpMethod.values) {
+            var endpoint = Endpoint(path: "hibye", httpMethod: m);
+            http.Response httpResponse;
+            var expectedBody = "helloWorld";
+            var expectedStatusCode = 300;
+            var expectedHeaders = {"Foo": "Bar"};
+            var r = makeSUT(fn: (re) {
+              httpResponse = _buildhttpResponse(
+                  request: re,
+                  statusCode: expectedStatusCode,
+                  body: expectedBody,
+                  headers: expectedHeaders);
+              return Future.value(httpResponse);
+            });
+            var response = await r.sut.request(endpoint);
+            expect(response.statusCode, expectedStatusCode,
+                reason: "Failed handling response statusCode for $m request");
+            expect(response.data, expectedBody,
+                reason: "Failed handling response data for $m request");
+            expect(response.headers, expectedHeaders,
+                reason: "Failed handling response headers for $m request");
+          }
+        });
+
+        test("throws an exception if the client throws one", () async {
+          for (var m in HttpMethod.values) {
+            var endpoint = Endpoint(path: "hibye", httpMethod: m);
+            var r = makeSUT(fn: (re) {
+              return Future.error(SocketException("Error"));
+            });
+            expect(() async => await r.sut.request(endpoint), throwsException);
+          }
+        });
+      });
+    });
+
+    group("requestMultipart", () {
+      test("add Enpoint path to baseURL", () async {
+        for (var m in HttpMethod.values) {
+          var endpoint = EndpointMultipart(
+              path: "hibye", resolveAgainstBaseURL: true, httpMethod: m);
+          http.StreamedResponse httpResponse;
+          var r = makeSUT(streamingFn: (re, bs) {
+            httpResponse = _buildhttpStreamedResponse(request: re);
+            return Future.value(httpResponse);
+          });
+          await r.sut.requestMultipart(endpoint);
+          expect(httpResponse.request.url, Uri.parse(_BASE_URL + "/hibye"),
+              reason: "Failed uri parsing for $m request");
         }
       });
 
-      test("throws an exception if the client throws one", () async {
+      test("add Enpoint path to baseURL, paths starting with /", () async {
         for (var m in HttpMethod.values) {
-          var endpoint = Endpoint(path: "hibye", httpMethod: m);
-          var r = makeSUT(fn: (re) {
-            return Future.error(SocketException("Error"));
+          var endpoint = EndpointMultipart(
+              path: "/hibye", resolveAgainstBaseURL: true, httpMethod: m);
+          http.StreamedResponse httpResponse;
+          var r = makeSUT(streamingFn: (re, bs) {
+            httpResponse = _buildhttpStreamedResponse(request: re);
+            return Future.value(httpResponse);
           });
-          expect(() async => await r.sut.request(endpoint), throwsException);
+          await r.sut.requestMultipart(endpoint);
+          expect(httpResponse.request.url, Uri.parse(_BASE_URL + "/hibye"),
+              reason: "Failed uri parsing for $m request");
         }
+      });
+
+      test("use Enpoint path as uri", () async {
+        for (var m in HttpMethod.values) {
+          var endpoint = EndpointMultipart(
+              path: "hibye", resolveAgainstBaseURL: false, httpMethod: m);
+          http.StreamedResponse httpResponse;
+          var r = makeSUT(streamingFn: (re, bs) {
+            httpResponse = _buildhttpStreamedResponse(request: re);
+            return Future.value(httpResponse);
+          });
+          await r.sut.requestMultipart(endpoint);
+          expect(httpResponse.request.url, Uri.parse("hibye"),
+              reason: "Failed uri parsing for $m request");
+        }
+      });
+
+      test("sets headers", () async {
+        var expectedHeaders = {"spam": "foo"};
+        var endpoint = EndpointMultipart(
+            path: "hibye",
+            httpMethod: HttpMethod.get,
+            headers: expectedHeaders);
+        http.StreamedResponse httpResponse;
+        var r = makeSUT(streamingFn: (re, bs) {
+          httpResponse = _buildhttpStreamedResponse(request: re);
+          return Future.value(httpResponse);
+        });
+        await r.sut.requestMultipart(endpoint);
+        expect(httpResponse.request.headers["spam"], "foo",
+            reason: "Failed comparing headers");
+      });
+
+      test("sets field ", () async {
+        var expectedFields = {"fieldKey1": "fieldValue1"};
+        var endpoint = EndpointMultipart(
+            path: "hibye", httpMethod: HttpMethod.get, fields: expectedFields);
+        http.StreamedResponse httpResponse;
+        var r = makeSUT(streamingFn: (re, bs) {
+          httpResponse = _buildhttpStreamedResponse(request: re);
+          return Future.value(httpResponse);
+        });
+        await r.sut.requestMultipart(endpoint);
+        expect((httpResponse.request as http.MultipartRequest).fields,
+            expectedFields,
+            reason: "Failed comparing fields");
+      });
+
+      test("sets files", () async {
+        var expectedFiles = [
+          EndpointMultipartFile(
+              fieldName: "testFieldName",
+              fileName: "testFileName",
+              bytes: utf8.encode("testBytes"))
+        ];
+        var endpoint = EndpointMultipart(
+            path: "hibye", httpMethod: HttpMethod.get, files: expectedFiles);
+        http.StreamedResponse httpResponse;
+        var r = makeSUT(streamingFn: (re, bs) {
+          httpResponse = _buildhttpStreamedResponse(request: re);
+          return Future.value(httpResponse);
+        });
+        await r.sut.requestMultipart(endpoint);
+        expect((httpResponse.request as http.MultipartRequest).files,
+            predicate((List<http.MultipartFile> r) {
+          return (r.first.field == expectedFiles.first.fieldName) &&
+              (r.first.filename == expectedFiles.first.fileName) &&
+              (r.first.length == expectedFiles.first.bytes.length);
+        }), reason: "Failed comparing files");
       });
     });
   });

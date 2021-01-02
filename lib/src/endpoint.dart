@@ -1,60 +1,19 @@
 import 'package:meta/meta.dart';
 import 'package:equatable/equatable.dart';
-
-enum MIMEType {
-  application_json,
-  multipart_form_data,
-  text_plain,
-  application_x_www_form_urlencoded,
-  nil
-}
-
-String mimeTypeValue(MIMEType type) {
-  switch (type) {
-    case MIMEType.application_json:
-      {
-        return "application/json";
-      }
-      break;
-    case MIMEType.multipart_form_data:
-      {
-        return "multipart/form-data";
-      }
-      break;
-    case MIMEType.text_plain:
-      {
-        return "text/plain";
-      }
-      break;
-    case MIMEType.application_x_www_form_urlencoded:
-      {
-        return "application/x-www-form-urlencoded";
-      }
-      break;
-    case MIMEType.nil:
-      {
-        return "";
-      }
-      break;
-  }
-
-  return "";
-}
-
-enum HttpMethod { get, post, put, delete, patch }
+import 'package:api_tools/api_tools.dart';
 
 String contentTypeHeaderKey = "Content-Type";
 String acceptTypeHeaderKey = "Accept";
 
 class Endpoint extends Equatable {
-  String path;
-  HttpMethod httpMethod;
-  Map<String, String> queryParameters;
-  Map<String, String> headers;
-  MIMEType contentType;
-  MIMEType acceptType;
-  bool resolveAgainstBaseURL;
-  dynamic data;
+  final String path;
+  final HttpMethod httpMethod;
+  final Map<String, String> queryParameters;
+  final Map<String, String> headers;
+  final MIMEType contentType;
+  final MIMEType acceptType;
+  final bool resolveAgainstBaseURL;
+  final dynamic data;
 
   Endpoint(
       {@required this.path,

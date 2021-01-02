@@ -13,15 +13,11 @@ class HttpAPIClient implements APIClient {
 
   @override
   Future<APIResponse> request(Endpoint endpoint) async {
-    String url;
-    if (endpoint.resolveAgainstBaseURL) {
-      var _modifiedPath = endpoint.path.startsWith("/")
-          ? endpoint.path.replaceFirst("/", "")
-          : endpoint.path;
-      url = path.join(baseURL, _modifiedPath);
-    } else {
-      url = endpoint.path;
-    }
+    String url = _generateUrl(
+        baseUrl: baseURL,
+        endpointPath: endpoint.path,
+        resolveAgainstBaseURL: endpoint.resolveAgainstBaseURL);
+
     if (endpoint.queryParameters.isNotEmpty) {
       url = [url, "?", mapToQuery(endpoint.queryParameters, encoding: utf8)]
           .join();
@@ -63,4 +59,53 @@ class HttpAPIClient implements APIClient {
           headers: response.headers);
     }
   }
+
+  @override
+  Future<APIResponse> requestMultipart(EndpointMultipart endpoint) async {
+    String url = _generateUrl(
+        baseUrl: baseURL,
+        endpointPath: endpoint.path,
+        resolveAgainstBaseURL: endpoint.resolveAgainstBaseURL);
+
+    Uri uri = Uri.parse(url);
+    Response response;
+    String method = _HTTP_METHODS_STRINGS_MAP[endpoint.httpMethod];
+    var request = MultipartRequest(method, uri);
+    request.headers.addAll(endpoint.headers);
+    request.fields.addAll(endpoint.fields);
+    request.files.addAll(endpoint.files
+        .map((x) =>
+            MultipartFile.fromBytes(x.fieldName, x.bytes, filename: x.fileName))
+        .toList());
+    await client.send(request);
+    if (response != null) {
+      return APIResponse(
+          data: response.body,
+          statusCode: response.statusCode,
+          headers: response.headers);
+    }
+  }
+
+  String _generateUrl(
+      {String endpointPath, String baseUrl, bool resolveAgainstBaseURL}) {
+    String url = baseURL;
+    if (resolveAgainstBaseURL) {
+      var _modifiedPath = endpointPath.startsWith("/")
+          ? endpointPath.replaceFirst("/", "")
+          : endpointPath;
+      url = path.join(baseURL, _modifiedPath);
+    } else {
+      url = endpointPath;
+    }
+
+    return url;
+  }
 }
+
+const Map<HttpMethod, String> _HTTP_METHODS_STRINGS_MAP = {
+  HttpMethod.get: "GET",
+  HttpMethod.put: "PUT",
+  HttpMethod.post: "POST",
+  HttpMethod.delete: "DELETE",
+  HttpMethod.patch: "PATCHs"
+};
