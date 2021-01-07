@@ -1,76 +1,88 @@
 import 'package:api_tools/api_tools.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class APIClientTestDouble implements APIClient {
-  Endpoint passedEndpoint;
-  EndpointMultipart passedEndpointMultpart;
-
-  @override
-  Future<APIResponse> request(Endpoint endpoint) async {
-    passedEndpoint = endpoint;
-  }
-
-  @override
-  Future<APIResponse> requestMultipart(EndpointMultipart endpoint) async {
-    passedEndpointMultpart = endpoint;
-  }
-}
+import 'package:api_tools/src/testing.dart';
 
 void main() {
   group("SecureAPIClient", () {
     group("request", () {
       test("should set authorization header with default key and value prefix",
           () {
-        var client = APIClientTestDouble();
+        Endpoint endpoint;
+        // ignore: missing_return
+        var client = APIClientTestDouble(requestCallback: (e) {
+          endpoint = e;
+        });
         var sut = SecureAPIClient(client: client, token: "123");
         sut.request(Endpoint(path: "spam", httpMethod: HttpMethod.get));
-        expect(client.passedEndpoint.headers["Authorization"], "Bearer 123");
+        expect(endpoint.headers["Authorization"], "Bearer 123");
       });
 
       test("should set authorization header with custom key", () {
-        var client = APIClientTestDouble();
+        Endpoint endpoint;
+        // ignore: missing_return
+        var client = APIClientTestDouble(requestCallback: (e) {
+          endpoint = e;
+        });
+
         var sut = SecureAPIClient(
             client: client, token: "123", authHeaderKey: "Auth");
         sut.request(Endpoint(path: "spam", httpMethod: HttpMethod.get));
-        expect(client.passedEndpoint.headers["Auth"], "Bearer 123");
+        expect(endpoint.headers["Auth"], "Bearer 123");
       });
 
       test("should set authorization header with custom token prefix", () {
-        var client = APIClientTestDouble();
+        Endpoint endpoint;
+        // ignore: missing_return
+        var client = APIClientTestDouble(requestCallback: (e) {
+          endpoint = e;
+        });
         var sut =
             SecureAPIClient(client: client, token: "123", authTokenPrefix: "B");
         sut.request(Endpoint(path: "spam", httpMethod: HttpMethod.get));
-        expect(client.passedEndpoint.headers["Authorization"], "B 123");
+        expect(endpoint.headers["Authorization"], "B 123");
       });
     });
 
     group("requestMutipart", () {
       test("should set authorization header with default key and value prefix",
           () {
-        var client = APIClientTestDouble();
+        EndpointMultipart endpoint;
+        // ignore: missing_return
+        var client = APIClientTestDouble(requestMultipartCallback: (e) {
+          endpoint = e;
+        });
         var sut = SecureAPIClient(client: client, token: "123");
+
         sut.requestMultipart(
             EndpointMultipart(path: "spam", httpMethod: HttpMethod.get));
-        expect(client.passedEndpointMultpart.headers["Authorization"],
-            "Bearer 123");
+        expect(endpoint.headers["Authorization"], "Bearer 123");
       });
 
       test("should set authorization header with custom key", () {
-        var client = APIClientTestDouble();
+        EndpointMultipart endpoint;
+        // ignore: missing_return
+        var client = APIClientTestDouble(requestMultipartCallback: (e) {
+          endpoint = e;
+        });
         var sut = SecureAPIClient(
             client: client, token: "123", authHeaderKey: "Auth");
         sut.requestMultipart(
             EndpointMultipart(path: "spam", httpMethod: HttpMethod.get));
-        expect(client.passedEndpointMultpart.headers["Auth"], "Bearer 123");
+        expect(endpoint.headers["Auth"], "Bearer 123");
       });
 
       test("should set authorization header with custom token prefix", () {
-        var client = APIClientTestDouble();
+        EndpointMultipart endpoint;
+        // ignore: missing_return
+        var client = APIClientTestDouble(requestMultipartCallback: (e) {
+          endpoint = e;
+        });
         var sut =
             SecureAPIClient(client: client, token: "123", authTokenPrefix: "B");
         sut.requestMultipart(
             EndpointMultipart(path: "spam", httpMethod: HttpMethod.get));
-        expect(client.passedEndpointMultpart.headers["Authorization"], "B 123");
+        expect(endpoint.headers["Authorization"], "B 123");
       });
     });
   });
