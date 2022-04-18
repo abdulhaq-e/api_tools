@@ -5,3 +5,5 @@
 ## [0.0.3] - Fix handling response of multipartrequests
 
 ## [0.0.4] - Add testing helpers
+
+## [1.0.0] - Null-safety
