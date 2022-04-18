@@ -5,14 +5,14 @@ class APIResponse {
   Map<String, dynamic> headers;
   int statusCode;
 
-  APIResponse({this.data, this.headers, this.statusCode});
+  APIResponse({required this.data, required this.headers, required this.statusCode});
 }
 
 class APIError implements Exception {
   APIResponse response;
   APIErrorType type;
   dynamic error;
-  APIError({this.response, this.type, this.error});
+  APIError({required this.response, required this.type, required this.error});
 }
 
 enum APIErrorType { timeout, response, cancel, general }

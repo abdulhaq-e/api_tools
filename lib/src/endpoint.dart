@@ -1,4 +1,3 @@
-import 'package:meta/meta.dart';
 import 'package:equatable/equatable.dart';
 import 'package:api_tools/api_tools.dart';
 
@@ -16,8 +15,8 @@ class Endpoint extends Equatable {
   final dynamic data;
 
   Endpoint(
-      {@required this.path,
-      @required this.httpMethod,
+      {required this.path,
+      required this.httpMethod,
       this.queryParameters = const <String, String>{},
       this.headers = const <String, String>{},
       this.contentType = MIMEType.application_json,
@@ -26,13 +25,13 @@ class Endpoint extends Equatable {
       this.data});
 
   Endpoint copyWith(
-      {String path,
-      HttpMethod httpMethod,
-      Map<String, String> queryParameters,
-      Map<String, String> headers,
-      MIMEType contentType,
-      MIMEType acceptType,
-      bool resolveAgainstBaseURL,
+      {String? path,
+      HttpMethod? httpMethod,
+      Map<String, String>? queryParameters,
+      Map<String, String>? headers,
+      MIMEType? contentType,
+      MIMEType? acceptType,
+      bool? resolveAgainstBaseURL,
       dynamic data}) {
     return Endpoint(
         path: path ?? this.path,
@@ -59,7 +58,7 @@ class Endpoint extends Equatable {
   }
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         path,
         httpMethod,
         queryParameters,

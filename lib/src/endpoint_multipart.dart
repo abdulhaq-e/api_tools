@@ -1,12 +1,14 @@
-import 'package:meta/meta.dart';
 import 'package:equatable/equatable.dart';
 import 'package:api_tools/api_tools.dart';
 
-class EndpointMultipartFileMediaType {
+class EndpointMultipartFileMediaType extends Equatable {
   final String type;
   final String subtype;
 
-  EndpointMultipartFileMediaType({this.type, this.subtype});
+  EndpointMultipartFileMediaType({required this.type, required this.subtype});
+
+  @override
+  List<Object?> get props => [type, subtype];
 }
 
 class EndpointMultipartFile extends Equatable {
@@ -16,10 +18,13 @@ class EndpointMultipartFile extends Equatable {
   final List<int> bytes;
 
   EndpointMultipartFile(
-      {this.fieldName, this.fileName, this.bytes, this.mediaType});
+      {required this.fieldName,
+      required this.fileName,
+      required this.bytes,
+      required this.mediaType});
 
   @override
-  List<Object> get props => [fieldName, fileName, bytes, mediaType];
+  List<Object?> get props => [fieldName, fileName, bytes, mediaType];
 }
 
 class EndpointMultipart extends Equatable {
@@ -32,8 +37,8 @@ class EndpointMultipart extends Equatable {
   final bool resolveAgainstBaseURL;
 
   EndpointMultipart({
-    @required this.path,
-    @required this.httpMethod,
+    required this.path,
+    required this.httpMethod,
     this.headers = const <String, String>{},
     this.fields = const <String, String>{},
     this.files = const [],
@@ -41,12 +46,12 @@ class EndpointMultipart extends Equatable {
   });
 
   EndpointMultipart copyWith({
-    String path,
-    HttpMethod httpMethod,
-    Map<String, String> headers,
-    Map<String, String> fields,
-    List<EndpointMultipartFile> files,
-    bool resolveAgainstBaseURL,
+    String? path,
+    HttpMethod? httpMethod,
+    Map<String, String>? headers,
+    Map<String, String>? fields,
+    List<EndpointMultipartFile>? files,
+    bool? resolveAgainstBaseURL,
   }) {
     return EndpointMultipart(
         path: path ?? this.path,
@@ -69,7 +74,7 @@ class EndpointMultipart extends Equatable {
   }
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         path,
         httpMethod,
         fields,

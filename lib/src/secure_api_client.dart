@@ -7,8 +7,8 @@ class SecureAPIClient extends APIClient {
   String authTokenPrefix;
 
   SecureAPIClient(
-      {this.client,
-      this.token,
+      {required this.client,
+      required this.token,
       this.authHeaderKey = "Authorization",
       this.authTokenPrefix = "Bearer"});
   @override

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:api_tools/api_tools.dart';
 import 'package:http/http.dart';
+// ignore: implementation_imports
 import 'package:http/src/utils.dart';
 import 'package:path/path.dart' as path;
 import 'package:http_parser/http_parser.dart';
@@ -10,7 +11,7 @@ class HttpAPIClient implements APIClient {
   String baseURL;
   BaseClient client;
 
-  HttpAPIClient({this.baseURL, this.client});
+  HttpAPIClient({required this.baseURL, required this.client});
 
   @override
   Future<APIResponse> request(Endpoint endpoint) async {
@@ -25,7 +26,7 @@ class HttpAPIClient implements APIClient {
     }
 
     Uri uri = Uri.parse(url);
-    Response response;
+    late Response response;
     Map<String, String> headers = {
       contentTypeHeaderKey: mimeTypeValue(endpoint.contentType),
       acceptTypeHeaderKey: mimeTypeValue(endpoint.acceptType),
@@ -49,16 +50,12 @@ class HttpAPIClient implements APIClient {
         response =
             await client.patch(uri, body: endpoint.data, headers: headers);
         break;
-      default:
-        break;
     }
 
-    if (response != null) {
-      return APIResponse(
-          data: response.body,
-          statusCode: response.statusCode,
-          headers: response.headers);
-    }
+    return APIResponse(
+        data: response.body,
+        statusCode: response.statusCode,
+        headers: response.headers);
   }
 
   @override
@@ -69,7 +66,7 @@ class HttpAPIClient implements APIClient {
         resolveAgainstBaseURL: endpoint.resolveAgainstBaseURL);
 
     Uri uri = Uri.parse(url);
-    String method = _HTTP_METHODS_STRINGS_MAP[endpoint.httpMethod];
+    String method = _HTTP_METHODS_STRINGS_MAP[endpoint.httpMethod]!;
     var request = MultipartRequest(method, uri);
     request.headers.addAll(endpoint.headers);
     request.fields.addAll(endpoint.fields);
@@ -80,16 +77,16 @@ class HttpAPIClient implements APIClient {
         .toList());
     var streamedResponse = await client.send(request);
     var response = await streamedResponse.stream.bytesToString();
-    if (response != null) {
-      return APIResponse(
-          data: response,
-          statusCode: streamedResponse.statusCode,
-          headers: streamedResponse.headers);
-    }
+    return APIResponse(
+        data: response,
+        statusCode: streamedResponse.statusCode,
+        headers: streamedResponse.headers);
   }
 
   String _generateUrl(
-      {String endpointPath, String baseUrl, bool resolveAgainstBaseURL}) {
+      {required String endpointPath,
+      required String baseUrl,
+      required bool resolveAgainstBaseURL}) {
     String url = baseURL;
     if (resolveAgainstBaseURL) {
       var _modifiedPath = endpointPath.startsWith("/")

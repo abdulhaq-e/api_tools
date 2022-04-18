@@ -5,15 +5,15 @@ class APIClientTestDouble implements APIClient {
   var requestCallCount = 0;
   var requestMultipartCallCount = 0;
 
-  final Future<APIResponse> Function(Endpoint endpoint) requestCallback;
-  final Future<APIResponse> Function(EndpointMultipart endpoint)
+  final Future<APIResponse> Function(Endpoint endpoint)? requestCallback;
+  final Future<APIResponse> Function(EndpointMultipart endpoint)?
       requestMultipartCallback;
 
   @override
   Future<APIResponse> request(Endpoint endpoint) async {
     requestCallCount += 1;
     if (requestCallback != null) {
-      return requestCallback(endpoint);
+      return requestCallback!(endpoint);
     } else {
       throw UnimplementedError();
     }
@@ -23,7 +23,7 @@ class APIClientTestDouble implements APIClient {
   Future<APIResponse> requestMultipart(EndpointMultipart endpoint) async {
     requestMultipartCallCount += 1;
     if (requestMultipartCallback != null) {
-      return requestMultipartCallback(endpoint);
+      return requestMultipartCallback!(endpoint);
     } else {
       throw UnimplementedError();
     }

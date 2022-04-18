@@ -2,6 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:api_tools/api_tools.dart';
 
+EndpointMultipartFile createStubMultipartFile() {
+  return EndpointMultipartFile(
+      fieldName: "foo",
+      fileName: "bar",
+      bytes: [],
+      mediaType: EndpointMultipartFileMediaType(subtype: "", type: ""));
+}
+
 void main() {
   group("EndpointMultipart", () {
     test("set defaults", () {
@@ -29,9 +37,9 @@ void main() {
           EndpointMultipart(path: p, httpMethod: m, fields: {"a": "b"}),
           reason: "Failed fields comparison");
       expect(
-          sut.copyWith(files: [EndpointMultipartFile()]),
+          sut.copyWith(files: [createStubMultipartFile()]),
           EndpointMultipart(
-              path: p, httpMethod: m, files: [EndpointMultipartFile()]),
+              path: p, httpMethod: m, files: [createStubMultipartFile()]),
           reason: "Failed files comparison");
       expect(sut.copyWith(headers: {"c": "d"}),
           EndpointMultipart(path: p, httpMethod: m, headers: {"c": "d"}),
