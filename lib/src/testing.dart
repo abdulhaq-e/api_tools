@@ -1,5 +1,9 @@
 import 'package:api_tools/api_tools.dart';
 
+APIResponse dummyAPIResponse() {
+  return APIResponse(data: "", headers: Map<String, String>(), statusCode: 200);
+}
+
 class APIClientTestDouble implements APIClient {
   APIClientTestDouble({this.requestCallback, this.requestMultipartCallback});
   var requestCallCount = 0;
