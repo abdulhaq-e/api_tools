@@ -1,7 +1,13 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:api_tools/api_tools.dart';
 
 APIResponse dummyAPIResponse() {
-  return APIResponse(data: "", headers: Map<String, String>(), statusCode: 200);
+  return APIResponse(
+      data: utf8.encode("input") as Uint8List,
+      headers: Map<String, String>(),
+      statusCode: 200);
 }
 
 class APIClientTestDouble implements APIClient {

@@ -1,11 +1,14 @@
+import 'dart:typed_data';
+
 import 'package:api_tools/api_tools.dart';
 
 class APIResponse {
-  dynamic data;
+  Uint8List data;
   Map<String, dynamic> headers;
   int statusCode;
 
-  APIResponse({required this.data, required this.headers, required this.statusCode});
+  APIResponse(
+      {required this.data, required this.headers, required this.statusCode});
 }
 
 class APIError implements Exception {

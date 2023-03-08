@@ -53,7 +53,7 @@ class HttpAPIClient implements APIClient {
     }
 
     return APIResponse(
-        data: response.body,
+        data: response.bodyBytes,
         statusCode: response.statusCode,
         headers: response.headers);
   }
@@ -76,7 +76,7 @@ class HttpAPIClient implements APIClient {
             contentType: MediaType(x.mediaType.type, x.mediaType.subtype)))
         .toList());
     var streamedResponse = await client.send(request);
-    var response = await streamedResponse.stream.bytesToString();
+    var response = await streamedResponse.stream.toBytes();
     return APIResponse(
         data: response,
         statusCode: streamedResponse.statusCode,

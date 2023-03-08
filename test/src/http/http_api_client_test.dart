@@ -263,7 +263,7 @@ void main() {
             var response = await r.sut.request(endpoint);
             expect(response.statusCode, expectedStatusCode,
                 reason: "Failed handling response statusCode for $m request");
-            expect(response.data, expectedBody,
+            expect(utf8.decode(response.data), expectedBody,
                 reason: "Failed handling response data for $m request");
             expect(response.headers, expectedHeaders,
                 reason: "Failed handling response headers for $m request");
@@ -405,7 +405,7 @@ void main() {
           var response = await r.sut.requestMultipart(endpoint);
           expect(response.statusCode, expectedStatusCode,
               reason: "Failed handling response statusCode");
-          expect(response.data, expectedBody,
+          expect(utf8.decode(response.data), expectedBody,
               reason: "Failed handling response data");
           expect(response.headers, expectedHeaders,
               reason: "Failed handling response headers");
