@@ -5,17 +5,21 @@ class SecureAPIClient extends APIClient {
   String token;
   String authHeaderKey;
   String authTokenPrefix;
+  Map<String, String>? additionalHeaders;
 
-  SecureAPIClient(
-      {required this.client,
-      required this.token,
-      this.authHeaderKey = "Authorization",
-      this.authTokenPrefix = "Bearer"});
+  SecureAPIClient({
+    required this.client,
+    required this.token,
+    this.authHeaderKey = "Authorization",
+    this.authTokenPrefix = "Bearer",
+    this.additionalHeaders,
+  });
   @override
   Future<APIResponse> request(Endpoint endpoint) async {
     Map<String, String> headers = {
       ...endpoint.headers,
-      this.authHeaderKey: '$authTokenPrefix $token'
+      this.authHeaderKey: '$authTokenPrefix $token',
+      ...(this.additionalHeaders ?? {}),
     };
     return client.request(endpoint.copyWith(headers: headers));
   }
@@ -24,7 +28,8 @@ class SecureAPIClient extends APIClient {
   Future<APIResponse> requestMultipart(EndpointMultipart endpoint) async {
     Map<String, String> headers = {
       ...endpoint.headers,
-      this.authHeaderKey: '$authTokenPrefix $token'
+      this.authHeaderKey: '$authTokenPrefix $token',
+      ...(this.additionalHeaders ?? {}),
     };
     return client.requestMultipart(endpoint.copyWith(headers: headers));
   }
