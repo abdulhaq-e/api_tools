@@ -3,73 +3,99 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:api_tools/src/testing.dart';
 
+({
+  SecureAPIClient client,
+  APIClient innerClient,
+  TokenProvider tokenProvider,
+}) makeSUT({
+  APIClient? client,
+  TokenProvider? tokenProvider,
+  String? authHeaderKey,
+  String? authTokenPrefix,
+  Map<String, String>? additionalHeaders,
+}) {
+  final innerClient = client ??
+      APIClientTestDouble(
+        requestCallback: (_) => Future.value(dummyAPIResponse()),
+        requestMultipartCallback: (_) => Future.value(dummyAPIResponse()),
+      );
+  final provider = tokenProvider ?? TokenProviderTestDouble("test-token");
+  final secureClient = SecureAPIClient(
+    client: innerClient,
+    tokenProvider: provider,
+    authHeaderKey: authHeaderKey ?? "Authorization",
+    authTokenPrefix: authTokenPrefix ?? "Bearer",
+    additionalHeaders: additionalHeaders,
+  );
+  return (
+    client: secureClient,
+    innerClient: innerClient,
+    tokenProvider: provider
+  );
+}
+
 void main() {
   group("SecureAPIClient", () {
     group("request", () {
       test("should set authorization header with default key and value prefix",
           () async {
         late Endpoint endpoint;
-        // ignore: missing_return
-        var client = APIClientTestDouble(requestCallback: (e) {
+        final innerClient = APIClientTestDouble(requestCallback: (e) {
           endpoint = e;
           return Future.value(dummyAPIResponse());
         });
-        var tokenProvider = TokenProviderTestDouble("123");
-        var sut = SecureAPIClient(client: client, tokenProvider: tokenProvider);
+        final (client: sut, innerClient: _, :tokenProvider) = makeSUT(
+          client: innerClient,
+          tokenProvider: TokenProviderTestDouble("123"),
+        );
         await sut.request(Endpoint(path: "spam", httpMethod: HttpMethod.get));
         expect(endpoint.headers["Authorization"], "Bearer 123");
       });
 
       test("should set authorization header with custom key", () async {
         late Endpoint endpoint;
-        // ignore: missing_return
-        var client = APIClientTestDouble(requestCallback: (e) {
+        final innerClient = APIClientTestDouble(requestCallback: (e) {
           endpoint = e;
           return Future.value(dummyAPIResponse());
         });
-
-        var tokenProvider = TokenProviderTestDouble("123");
-        var sut = SecureAPIClient(
-            client: client, tokenProvider: tokenProvider, authHeaderKey: "Auth");
+        final (client: sut, innerClient: _, :tokenProvider) = makeSUT(
+          client: innerClient,
+          tokenProvider: TokenProviderTestDouble("123"),
+          authHeaderKey: "Auth",
+        );
         await sut.request(Endpoint(path: "spam", httpMethod: HttpMethod.get));
         expect(endpoint.headers["Auth"], "Bearer 123");
       });
 
-      test("should set authorization header with custom token prefix", () async {
+      test("should set authorization header with custom token prefix",
+          () async {
         late Endpoint endpoint;
-        // ignore: missing_return
-        var client = APIClientTestDouble(requestCallback: (e) {
+        final innerClient = APIClientTestDouble(requestCallback: (e) {
           endpoint = e;
           return Future.value(dummyAPIResponse());
         });
-        var tokenProvider = TokenProviderTestDouble("123");
-        var sut =
-            SecureAPIClient(client: client, tokenProvider: tokenProvider, authTokenPrefix: "B");
+        final (client: sut, innerClient: _, :tokenProvider) = makeSUT(
+          client: innerClient,
+          tokenProvider: TokenProviderTestDouble("123"),
+          authTokenPrefix: "B",
+        );
         await sut.request(Endpoint(path: "spam", httpMethod: HttpMethod.get));
         expect(endpoint.headers["Authorization"], "B 123");
       });
 
       test("should call getToken() before making request", () async {
-        // ignore: missing_return
-        var client = APIClientTestDouble(requestCallback: (e) {
-          return Future.value(dummyAPIResponse());
-        });
-        var tokenProvider = TokenProviderTestDouble("test-token");
-        var sut = SecureAPIClient(client: client, tokenProvider: tokenProvider);
+        final (client: sut, innerClient: _, :tokenProvider) = makeSUT();
 
-        expect(tokenProvider.getTokenCallCount, 0);
+        expect((tokenProvider as TokenProviderTestDouble).getTokenCallCount, 0);
         await sut.request(Endpoint(path: "spam", httpMethod: HttpMethod.get));
-        expect(tokenProvider.getTokenCallCount, 1);
+        expect((tokenProvider as TokenProviderTestDouble).getTokenCallCount, 1);
       });
 
       test("should propagate exception when tokenProvider throws", () async {
-        // ignore: missing_return
-        var client = APIClientTestDouble(requestCallback: (e) {
-          return Future.value(dummyAPIResponse());
-        });
-        var exception = Exception("No token available");
-        var tokenProvider = ThrowingTokenProviderTestDouble(exception);
-        var sut = SecureAPIClient(client: client, tokenProvider: tokenProvider);
+        final exception = Exception("No token available");
+        final (client: sut, innerClient: _, :tokenProvider) = makeSUT(
+          tokenProvider: ThrowingTokenProviderTestDouble(exception),
+        );
 
         expect(
           () => sut.request(Endpoint(path: "spam", httpMethod: HttpMethod.get)),
@@ -82,13 +108,14 @@ void main() {
       test("should set authorization header with default key and value prefix",
           () async {
         late EndpointMultipart endpoint;
-        // ignore: missing_return
-        var client = APIClientTestDouble(requestMultipartCallback: (e) {
+        final innerClient = APIClientTestDouble(requestMultipartCallback: (e) {
           endpoint = e;
           return Future.value(dummyAPIResponse());
         });
-        var tokenProvider = TokenProviderTestDouble("123");
-        var sut = SecureAPIClient(client: client, tokenProvider: tokenProvider);
+        final (client: sut, innerClient: _, :tokenProvider) = makeSUT(
+          client: innerClient,
+          tokenProvider: TokenProviderTestDouble("123"),
+        );
 
         await sut.requestMultipart(
             EndpointMultipart(path: "spam", httpMethod: HttpMethod.get));
@@ -97,56 +124,51 @@ void main() {
 
       test("should set authorization header with custom key", () async {
         late EndpointMultipart endpoint;
-        // ignore: missing_return
-        var client = APIClientTestDouble(requestMultipartCallback: (e) {
+        final innerClient = APIClientTestDouble(requestMultipartCallback: (e) {
           endpoint = e;
           return Future.value(dummyAPIResponse());
         });
-        var tokenProvider = TokenProviderTestDouble("123");
-        var sut = SecureAPIClient(
-            client: client, tokenProvider: tokenProvider, authHeaderKey: "Auth");
+        final (client: sut, innerClient: _, :tokenProvider) = makeSUT(
+          client: innerClient,
+          tokenProvider: TokenProviderTestDouble("123"),
+          authHeaderKey: "Auth",
+        );
         await sut.requestMultipart(
             EndpointMultipart(path: "spam", httpMethod: HttpMethod.get));
         expect(endpoint.headers["Auth"], "Bearer 123");
       });
 
-      test("should set authorization header with custom token prefix", () async {
+      test("should set authorization header with custom token prefix",
+          () async {
         late EndpointMultipart endpoint;
-        // ignore: missing_return
-        var client = APIClientTestDouble(requestMultipartCallback: (e) {
+        final innerClient = APIClientTestDouble(requestMultipartCallback: (e) {
           endpoint = e;
           return Future.value(dummyAPIResponse());
         });
-        var tokenProvider = TokenProviderTestDouble("123");
-        var sut =
-            SecureAPIClient(client: client, tokenProvider: tokenProvider, authTokenPrefix: "B");
+        final (client: sut, innerClient: _, :tokenProvider) = makeSUT(
+          client: innerClient,
+          tokenProvider: TokenProviderTestDouble("123"),
+          authTokenPrefix: "B",
+        );
         await sut.requestMultipart(
             EndpointMultipart(path: "spam", httpMethod: HttpMethod.get));
         expect(endpoint.headers["Authorization"], "B 123");
       });
 
       test("should call getToken() before making request", () async {
-        // ignore: missing_return
-        var client = APIClientTestDouble(requestMultipartCallback: (e) {
-          return Future.value(dummyAPIResponse());
-        });
-        var tokenProvider = TokenProviderTestDouble("test-token");
-        var sut = SecureAPIClient(client: client, tokenProvider: tokenProvider);
+        final (client: sut, innerClient: _, :tokenProvider) = makeSUT();
 
-        expect(tokenProvider.getTokenCallCount, 0);
+        expect((tokenProvider as TokenProviderTestDouble).getTokenCallCount, 0);
         await sut.requestMultipart(
             EndpointMultipart(path: "spam", httpMethod: HttpMethod.get));
-        expect(tokenProvider.getTokenCallCount, 1);
+        expect((tokenProvider as TokenProviderTestDouble).getTokenCallCount, 1);
       });
 
       test("should propagate exception when tokenProvider throws", () async {
-        // ignore: missing_return
-        var client = APIClientTestDouble(requestMultipartCallback: (e) {
-          return Future.value(dummyAPIResponse());
-        });
-        var exception = Exception("No token available");
-        var tokenProvider = ThrowingTokenProviderTestDouble(exception);
-        var sut = SecureAPIClient(client: client, tokenProvider: tokenProvider);
+        final exception = Exception("No token available");
+        final (client: sut, innerClient: _, :tokenProvider) = makeSUT(
+          tokenProvider: ThrowingTokenProviderTestDouble(exception),
+        );
 
         expect(
           () => sut.requestMultipart(

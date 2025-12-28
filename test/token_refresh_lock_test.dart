@@ -3,29 +3,38 @@ import 'package:api_tools/src/token_refresh_lock.dart';
 import 'package:api_tools/src/testing.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+({
+  TokenRefreshLock lock,
+  ConfigurableTokenProviderTestDouble tokenProvider,
+}) makeSUT({
+  ConfigurableTokenProviderTestDouble? tokenProvider,
+}) {
+  final provider = tokenProvider ?? ConfigurableTokenProviderTestDouble();
+  final lock = TokenRefreshLock(tokenProvider: provider);
+  return (lock: lock, tokenProvider: provider);
+}
+
 void main() {
   group("TokenRefreshLock", () {
     test("should call refreshToken on the token provider", () async {
-      final tokenProvider = ConfigurableTokenProviderTestDouble();
-      final lock = TokenRefreshLock(tokenProvider: tokenProvider);
+      final (lock: sut, :tokenProvider) = makeSUT();
 
       expect(tokenProvider.refreshCallCount, 0);
-      await lock.refresh();
+      await sut.refresh();
       expect(tokenProvider.refreshCallCount, 1);
     });
 
     test("should only call refreshToken once when multiple concurrent refreshes are requested",
         () async {
-      final tokenProvider = ConfigurableTokenProviderTestDouble()
-        ..refreshDelay = Duration(milliseconds: 100);
-      final lock = TokenRefreshLock(tokenProvider: tokenProvider);
+      final (lock: sut, :tokenProvider) = makeSUT();
+      tokenProvider.refreshDelay = Duration(milliseconds: 100);
 
       // Start multiple concurrent refresh operations
       final futures = [
-        lock.refresh(),
-        lock.refresh(),
-        lock.refresh(),
-        lock.refresh(),
+        sut.refresh(),
+        sut.refresh(),
+        sut.refresh(),
+        sut.refresh(),
       ];
 
       await Future.wait(futures);
@@ -35,43 +44,40 @@ void main() {
     });
 
     test("should allow sequential refreshes", () async {
-      final tokenProvider = ConfigurableTokenProviderTestDouble();
-      final lock = TokenRefreshLock(tokenProvider: tokenProvider);
+      final (lock: sut, :tokenProvider) = makeSUT();
 
-      await lock.refresh();
+      await sut.refresh();
       expect(tokenProvider.refreshCallCount, 1);
 
-      await lock.refresh();
+      await sut.refresh();
       expect(tokenProvider.refreshCallCount, 2);
 
-      await lock.refresh();
+      await sut.refresh();
       expect(tokenProvider.refreshCallCount, 3);
     });
 
     test("should propagate exceptions from token provider", () async {
+      final (lock: sut, :tokenProvider) = makeSUT();
       final exception = Exception("Token refresh failed");
-      final tokenProvider = ConfigurableTokenProviderTestDouble()
-        ..exceptionToThrow = exception;
-      final lock = TokenRefreshLock(tokenProvider: tokenProvider);
+      tokenProvider.exceptionToThrow = exception;
 
       await expectLater(
-        lock.refresh(),
+        sut.refresh(),
         throwsA(equals(exception)),
       );
     });
 
     test("should propagate the same exception to all waiting callers", () async {
+      final (lock: sut, :tokenProvider) = makeSUT();
       final exception = Exception("Token refresh failed");
-      final tokenProvider = ConfigurableTokenProviderTestDouble()
-        ..exceptionToThrow = exception
-        ..refreshDelay = Duration(milliseconds: 100);
-      final lock = TokenRefreshLock(tokenProvider: tokenProvider);
+      tokenProvider.exceptionToThrow = exception;
+      tokenProvider.refreshDelay = Duration(milliseconds: 100);
 
       // Start multiple concurrent refresh operations
       final futures = [
-        lock.refresh(),
-        lock.refresh(),
-        lock.refresh(),
+        sut.refresh(),
+        sut.refresh(),
+        sut.refresh(),
       ];
 
       // All should receive the same exception
@@ -84,14 +90,13 @@ void main() {
     });
 
     test("should allow new refresh after a failed refresh", () async {
+      final (lock: sut, :tokenProvider) = makeSUT();
       final exception = Exception("First refresh failed");
-      final tokenProvider = ConfigurableTokenProviderTestDouble()
-        ..exceptionToThrow = exception;
-      final lock = TokenRefreshLock(tokenProvider: tokenProvider);
+      tokenProvider.exceptionToThrow = exception;
 
       // First refresh should fail
       await expectLater(
-        lock.refresh(),
+        sut.refresh(),
         throwsA(equals(exception)),
       );
 
@@ -99,22 +104,21 @@ void main() {
       tokenProvider.exceptionToThrow = null;
 
       // Second refresh should succeed
-      await lock.refresh();
+      await sut.refresh();
       expect(tokenProvider.refreshCallCount, 2);
     });
 
     test("should serialize concurrent refresh calls even with delays", () async {
-      final tokenProvider = ConfigurableTokenProviderTestDouble()
-        ..refreshDelay = Duration(milliseconds: 50);
-      final lock = TokenRefreshLock(tokenProvider: tokenProvider);
+      final (lock: sut, :tokenProvider) = makeSUT();
+      tokenProvider.refreshDelay = Duration(milliseconds: 50);
 
       final startTime = DateTime.now();
 
       // Start 3 concurrent refresh operations
       final futures = [
-        lock.refresh(),
-        lock.refresh(),
-        lock.refresh(),
+        sut.refresh(),
+        sut.refresh(),
+        sut.refresh(),
       ];
 
       await Future.wait(futures);
