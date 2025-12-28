@@ -1,41 +1,7 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:api_tools/api_tools.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:api_tools/src/testing.dart';
-
-APIResponse createDummyResponse() {
-  return APIResponse(
-      data: utf8.encode("input") as Uint8List,
-      headers: Map<String, String>(),
-      statusCode: 200);
-}
-
-class MockTokenProvider implements TokenProvider {
-  final String token;
-  int getTokenCallCount = 0;
-
-  MockTokenProvider(this.token);
-
-  @override
-  Future<String> getToken() async {
-    getTokenCallCount++;
-    return token;
-  }
-}
-
-class ThrowingTokenProvider implements TokenProvider {
-  final Exception exception;
-
-  ThrowingTokenProvider(this.exception);
-
-  @override
-  Future<String> getToken() async {
-    throw exception;
-  }
-}
 
 void main() {
   group("SecureAPIClient", () {
@@ -46,9 +12,9 @@ void main() {
         // ignore: missing_return
         var client = APIClientTestDouble(requestCallback: (e) {
           endpoint = e;
-          return Future.value(createDummyResponse());
+          return Future.value(dummyAPIResponse());
         });
-        var tokenProvider = MockTokenProvider("123");
+        var tokenProvider = TokenProviderTestDouble("123");
         var sut = SecureAPIClient(client: client, tokenProvider: tokenProvider);
         await sut.request(Endpoint(path: "spam", httpMethod: HttpMethod.get));
         expect(endpoint.headers["Authorization"], "Bearer 123");
@@ -59,10 +25,10 @@ void main() {
         // ignore: missing_return
         var client = APIClientTestDouble(requestCallback: (e) {
           endpoint = e;
-          return Future.value(createDummyResponse());
+          return Future.value(dummyAPIResponse());
         });
 
-        var tokenProvider = MockTokenProvider("123");
+        var tokenProvider = TokenProviderTestDouble("123");
         var sut = SecureAPIClient(
             client: client, tokenProvider: tokenProvider, authHeaderKey: "Auth");
         await sut.request(Endpoint(path: "spam", httpMethod: HttpMethod.get));
@@ -74,9 +40,9 @@ void main() {
         // ignore: missing_return
         var client = APIClientTestDouble(requestCallback: (e) {
           endpoint = e;
-          return Future.value(createDummyResponse());
+          return Future.value(dummyAPIResponse());
         });
-        var tokenProvider = MockTokenProvider("123");
+        var tokenProvider = TokenProviderTestDouble("123");
         var sut =
             SecureAPIClient(client: client, tokenProvider: tokenProvider, authTokenPrefix: "B");
         await sut.request(Endpoint(path: "spam", httpMethod: HttpMethod.get));
@@ -86,9 +52,9 @@ void main() {
       test("should call getToken() before making request", () async {
         // ignore: missing_return
         var client = APIClientTestDouble(requestCallback: (e) {
-          return Future.value(createDummyResponse());
+          return Future.value(dummyAPIResponse());
         });
-        var tokenProvider = MockTokenProvider("test-token");
+        var tokenProvider = TokenProviderTestDouble("test-token");
         var sut = SecureAPIClient(client: client, tokenProvider: tokenProvider);
 
         expect(tokenProvider.getTokenCallCount, 0);
@@ -99,10 +65,10 @@ void main() {
       test("should propagate exception when tokenProvider throws", () async {
         // ignore: missing_return
         var client = APIClientTestDouble(requestCallback: (e) {
-          return Future.value(createDummyResponse());
+          return Future.value(dummyAPIResponse());
         });
         var exception = Exception("No token available");
-        var tokenProvider = ThrowingTokenProvider(exception);
+        var tokenProvider = ThrowingTokenProviderTestDouble(exception);
         var sut = SecureAPIClient(client: client, tokenProvider: tokenProvider);
 
         expect(
@@ -119,9 +85,9 @@ void main() {
         // ignore: missing_return
         var client = APIClientTestDouble(requestMultipartCallback: (e) {
           endpoint = e;
-          return Future.value(createDummyResponse());
+          return Future.value(dummyAPIResponse());
         });
-        var tokenProvider = MockTokenProvider("123");
+        var tokenProvider = TokenProviderTestDouble("123");
         var sut = SecureAPIClient(client: client, tokenProvider: tokenProvider);
 
         await sut.requestMultipart(
@@ -134,9 +100,9 @@ void main() {
         // ignore: missing_return
         var client = APIClientTestDouble(requestMultipartCallback: (e) {
           endpoint = e;
-          return Future.value(createDummyResponse());
+          return Future.value(dummyAPIResponse());
         });
-        var tokenProvider = MockTokenProvider("123");
+        var tokenProvider = TokenProviderTestDouble("123");
         var sut = SecureAPIClient(
             client: client, tokenProvider: tokenProvider, authHeaderKey: "Auth");
         await sut.requestMultipart(
@@ -149,9 +115,9 @@ void main() {
         // ignore: missing_return
         var client = APIClientTestDouble(requestMultipartCallback: (e) {
           endpoint = e;
-          return Future.value(createDummyResponse());
+          return Future.value(dummyAPIResponse());
         });
-        var tokenProvider = MockTokenProvider("123");
+        var tokenProvider = TokenProviderTestDouble("123");
         var sut =
             SecureAPIClient(client: client, tokenProvider: tokenProvider, authTokenPrefix: "B");
         await sut.requestMultipart(
@@ -162,9 +128,9 @@ void main() {
       test("should call getToken() before making request", () async {
         // ignore: missing_return
         var client = APIClientTestDouble(requestMultipartCallback: (e) {
-          return Future.value(createDummyResponse());
+          return Future.value(dummyAPIResponse());
         });
-        var tokenProvider = MockTokenProvider("test-token");
+        var tokenProvider = TokenProviderTestDouble("test-token");
         var sut = SecureAPIClient(client: client, tokenProvider: tokenProvider);
 
         expect(tokenProvider.getTokenCallCount, 0);
@@ -176,10 +142,10 @@ void main() {
       test("should propagate exception when tokenProvider throws", () async {
         // ignore: missing_return
         var client = APIClientTestDouble(requestMultipartCallback: (e) {
-          return Future.value(createDummyResponse());
+          return Future.value(dummyAPIResponse());
         });
         var exception = Exception("No token available");
-        var tokenProvider = ThrowingTokenProvider(exception);
+        var tokenProvider = ThrowingTokenProviderTestDouble(exception);
         var sut = SecureAPIClient(client: client, tokenProvider: tokenProvider);
 
         expect(

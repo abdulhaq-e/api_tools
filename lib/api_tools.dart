@@ -8,3 +8,5 @@ export 'package:api_tools/src/http/http_api_client.dart';
 export 'package:api_tools/src/http_methods.dart';
 export 'package:api_tools/src/mime_types.dart';
 export 'package:api_tools/src/token_provider.dart';
+export 'package:api_tools/src/token_refresh_lock.dart';
+export 'package:api_tools/src/refreshable_api_client.dart';

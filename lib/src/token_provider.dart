@@ -9,4 +9,11 @@ abstract class TokenProvider {
   /// authentication token. Implementations should handle token retrieval,
   /// refresh logic if needed, and any errors that may occur.
   Future<String> getToken();
+
+  /// Refreshes the authentication token.
+  ///
+  /// This method is called when the current token is expired or invalid
+  /// (typically after receiving a 401 response). Implementations should
+  /// obtain a new token from the authentication service and store it.
+  Future<void> refreshToken();
 }
