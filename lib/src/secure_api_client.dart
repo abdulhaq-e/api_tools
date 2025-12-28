@@ -2,20 +2,21 @@ import 'package:api_tools/api_tools.dart';
 
 class SecureAPIClient extends APIClient {
   APIClient client;
-  String token;
+  TokenProvider tokenProvider;
   String authHeaderKey;
   String authTokenPrefix;
   Map<String, String>? additionalHeaders;
 
   SecureAPIClient({
     required this.client,
-    required this.token,
+    required this.tokenProvider,
     this.authHeaderKey = "Authorization",
     this.authTokenPrefix = "Bearer",
     this.additionalHeaders,
   });
   @override
   Future<APIResponse> request(Endpoint endpoint) async {
+    final token = await tokenProvider.getToken();
     Map<String, String> headers = {
       ...endpoint.headers,
       this.authHeaderKey: '$authTokenPrefix $token',
@@ -26,6 +27,7 @@ class SecureAPIClient extends APIClient {
 
   @override
   Future<APIResponse> requestMultipart(EndpointMultipart endpoint) async {
+    final token = await tokenProvider.getToken();
     Map<String, String> headers = {
       ...endpoint.headers,
       this.authHeaderKey: '$authTokenPrefix $token',
